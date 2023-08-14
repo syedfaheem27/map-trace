@@ -11,38 +11,80 @@ const inputDuration = document.querySelector(".form__input--duration");
 const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
-navigator.geolocation.getCurrentPosition(
-  function (position) {
-    const { latitude, longitude } = position.coords;
-    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
+//variables storing datat about the event
+let map, mapEvent;
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      const { latitude, longitude } = position.coords;
+      console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
 
-    const coords = [latitude, longitude];
+      const coords = [latitude, longitude];
 
-    const map = L.map("map").setView(coords, 13);
+      map = L.map("map").setView(coords, 13);
 
-    L.tileLayer("https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+      L.tileLayer("https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
 
-    map.on("click", function (mapEvent) {
-      const { lat, lng } = mapEvent.latlng;
+      map.on("click", function (mapE) {
+        mapEvent = mapE;
+        form.classList.remove("hidden");
+        inputDistance.focus();
 
-      L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(
-          L.popup([lat, lng], {
-            maxWidth: 250,
-            minWidth: 100,
-            autoClose: false,
-            closeOnClick: false,
-            className: "running-popup",
-          }).setContent("Cycling")
-        )
-        .openPopup();
-    });
-  },
-  function () {
-    alert("Failed to get the co-ordinates");
-  }
-);
+        //   const { lat, lng } = mapEvent.latlng;
+        //   L.marker([lat, lng])
+        //     .addTo(map)
+        //     .bindPopup(
+        //       L.popup([lat, lng], {
+        //         maxWidth: 250,
+        //         minWidth: 100,
+        //         autoClose: false,
+        //         closeOnClick: false,
+        //         className: "running-popup",
+        //       }).setContent("Cycling")
+        //     )
+        //     .openPopup();
+      });
+    },
+    function () {
+      alert("Failed to get the co-ordinates");
+    }
+  );
+}
+
+//Submit event handling
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const { lat, lng } = mapEvent.latlng;
+  L.marker([lat, lng])
+    .addTo(map)
+    .bindPopup(
+      L.popup([lat, lng], {
+        maxWidth: 250,
+        minWidth: 100,
+        autoClose: false,
+        closeOnClick: false,
+        className: `${inputType.value}-popup`,
+      }).setContent(inputType.value)
+    )
+    .openPopup();
+
+  //Clear input fields
+  inputCadence.value =
+    inputDistance.value =
+    inputDuration.value =
+    inputElevation.value =
+      "";
+  inputType.value = "running";
+
+  form.classList.add("hidden");
+});
+
+//Handling the change event on the form
+inputType.addEventListener("change", function () {
+  inputElevation.closest(".form__row").classList.toggle("form__row--hidden");
+  inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
+});
