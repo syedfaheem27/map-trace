@@ -6,7 +6,6 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 class Workout {
   id = (Date.now() + "").slice(-10);
   date = new Date();
-  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; //[lat,lng]
@@ -18,10 +17,6 @@ class Workout {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
-  }
-
-  click() {
-    this.clicks++;
   }
 }
 
@@ -71,14 +66,11 @@ class App {
 
   constructor() {
     this._getLocation();
+    this._getLocalStorage();
 
-    //Handling the change event on the form
+    //Attaching event handlers
     inputType.addEventListener("change", this._toggleActivity);
-
-    //Submit event handling
     form.addEventListener("submit", this._submitForm.bind(this));
-
-    //adding the move to marker event
     containerWorkouts.addEventListener("click", this._moveToMarker.bind(this));
   }
 
@@ -107,6 +99,8 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on("click", this._showForm.bind(this));
+
+    this.#workouts.forEach((work) => this._renderWorkoutMarker(work));
   }
 
   _showForm(mapE) {
@@ -188,15 +182,16 @@ class App {
 
     //render workout marker on the map
     this._renderWorkoutMarker(workout);
+
+    //add workouts to the local storage
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
-    const { lat, lng } = this.#mapEvent.latlng;
-
-    L.marker([lat, lng])
+    L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
-        L.popup([lat, lng], {
+        L.popup(workout.coords, {
           maxWidth: 250,
           minWidth: 100,
           autoClose: false,
@@ -228,7 +223,9 @@ class App {
           <div class="workout__details">
             <span class="workout__icon">⚡️</span>
             <span class="workout__value">${
-              workout.type === "running" ? workout.pace : workout.speed
+              workout.type === "running"
+                ? workout.pace.toFixed(2)
+                : workout.speed.toFixed(2)
             }</span>
             <span class="workout__unit">${
               workout.type === "running" ? "min/km" : "km/h"
@@ -256,13 +253,10 @@ class App {
     const workoutEl = e.target.closest(".workout");
 
     if (!workoutEl) return;
-    // console.log(workoutEl);
 
     const workout = this.#workouts.find(
       (workout) => workout.id === workoutEl.dataset.id
     );
-
-    // console.log(workout);
 
     this.#map.setView(workout.coords, 13, {
       animate: true,
@@ -270,10 +264,26 @@ class App {
         duration: 0.75,
       },
     });
+  }
 
-    //tracking the number of clicks happening per workout
-    workout.click();
-    console.log(workout);
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem("workouts"));
+
+    if (!data) return;
+
+    this.#workouts = [...data];
+
+    this.#workouts.forEach((work) => {
+      this._renderWorkout(work);
+    });
+  }
+  deleteLocalStorage() {
+    localStorage.removeItem("workouts");
+    location.reload();
   }
 }
 
