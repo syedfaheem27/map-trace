@@ -6,6 +6,7 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 class Workout {
   id = (Date.now() + "").slice(-10);
   date = new Date();
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; //[lat,lng]
@@ -17,6 +18,10 @@ class Workout {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -62,7 +67,7 @@ const inputElevation = document.querySelector(".form__input--elevation");
 class App {
   #map;
   #mapEvent;
-  workouts = [];
+  #workouts = [];
 
   constructor() {
     this._getLocation();
@@ -72,6 +77,9 @@ class App {
 
     //Submit event handling
     form.addEventListener("submit", this._submitForm.bind(this));
+
+    //adding the move to marker event
+    containerWorkouts.addEventListener("click", this._moveToMarker.bind(this));
   }
 
   _getLocation() {
@@ -170,7 +178,7 @@ class App {
     }
 
     //push the workout in the workouts array
-    this.workouts.push(workout);
+    this.#workouts.push(workout);
 
     //render the workout
     this._renderWorkout(workout);
@@ -242,6 +250,30 @@ class App {
   `;
 
     form.insertAdjacentHTML("afterend", html);
+  }
+
+  _moveToMarker(e) {
+    const workoutEl = e.target.closest(".workout");
+
+    if (!workoutEl) return;
+    // console.log(workoutEl);
+
+    const workout = this.#workouts.find(
+      (workout) => workout.id === workoutEl.dataset.id
+    );
+
+    // console.log(workout);
+
+    this.#map.setView(workout.coords, 13, {
+      animate: true,
+      pan: {
+        duration: 0.75,
+      },
+    });
+
+    //tracking the number of clicks happening per workout
+    workout.click();
+    console.log(workout);
   }
 }
 
