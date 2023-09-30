@@ -16,3 +16,8 @@ the third party leaflet library to render the map.
 The architecture that's being employed for this application is based
 on classes and objects where private and public fields and methods
 have been used.
+
+# Technologies used
+
+HTML,CSS and JS.
+Leaflet library - the leading open-source JavaScript library for mobile-friendly interactive maps.
